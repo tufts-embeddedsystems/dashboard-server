@@ -1,0 +1,30 @@
+<html>
+<meta charset="UTF-8"> 
+<head>
+
+<title>EE 193 sensor node index</title>
+<link rel="stylesheet" href="/static/style.css" />
+
+</head>
+<body>
+<h1><a href="https://www.ece.tufts.edu/ee/193AES/">EE 193</a> sensor node index</h1>
+
+{% for teamname in nodes %}
+<h2>{{teamname}}</h2>
+
+<div class="teambox">
+{% for nodeid in nodes[teamname] %}
+<a href="/node/{{teamname}}/{{nodeid}}">
+<div class="nodebox">
+  <div class="nodeid">{{nodeid}}</div>
+  <div class="temp">{{nodes[teamname][nodeid][4] / 100}}&deg;C</div>
+  <div class="battery">{{nodes[teamname][nodeid][6]}} %</div>
+</div>
+</a>
+{% endfor %}
+</div>
+
+{% endfor %}
+
+</body>
+</html>

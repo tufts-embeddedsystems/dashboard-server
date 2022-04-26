@@ -1,0 +1,5 @@
+# Deploy the web application using gunicorn
+# This is configured to run on port 8000 with an nginx reverse proxy
+
+gunicorn3 -b 127.0.0.1:8000 main:app &
+

@@ -1,0 +1,18 @@
+
+.teambox {
+  display: flex;
+}
+
+.nodebox {
+  border: 1px solid gray;
+  padding: 10px;
+  margin: 10px;
+  text-align: center;
+  font-family: sans;
+}
+
+.nodeid {
+  font-weight: bold;
+  font-size: x-large;
+}
+
