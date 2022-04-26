@@ -32,12 +32,12 @@ def index():
   # Get the list of nodes for each team
   for t in teams:
     nodes[t] = {}
-    result = c.execute("SELECT DISTINCT nodeid FROM messages WHERE team IS ? ORDER BY timestamp", (t,))
+    result = c.execute("SELECT DISTINCT nodeid FROM messages WHERE team IS ?", (t,))
     nodeids = [n[0] for n in result]
 
     # Get the most recent update from each node
     for n in nodeids:
-      result = c.execute("SELECT * FROM messages WHERE team IS ? AND nodeid IS ? ORDER BY timestamp LIMIT 1", (t, n))
+      result = c.execute("SELECT * FROM messages WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
       nodes[t][n] = result.fetchone()
 
   conn.close()
