@@ -1,4 +1,25 @@
 
+.iptable {
+    border-style: none;
+    padding:10px;
+}
+
+.iptable tr:nth-child(even) { background-color: #e0e0e0; }
+.iptable tr.r1 { font-weight: bold; border-bottom: 2px solid black; }
+
+.iptable td{
+    padding: 5px;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    text-align: left;
+    border-color: #dddddd;
+}
+
+.complete {
+  background-color: #cde6b4;
+}
+
+/* Old stuff */
 .teambox {
   display: flex;
 }

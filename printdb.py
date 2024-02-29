@@ -8,7 +8,7 @@ dbFile = 'data.db'
 conn = sqlite3.connect(dbFile)
 c = conn.cursor()
 
-messages = c.execute("SELECT * FROM messages WHERE team IS 'eccentric-egret'")
+messages = c.execute("SELECT * FROM messages WHERE student IS 'sbell03'")
 
 for m in messages:
   print(m)

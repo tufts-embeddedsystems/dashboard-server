@@ -2,29 +2,33 @@
 <meta charset="UTF-8"> 
 <head>
 
-<title>EE 193 sensor node index</title>
+<title>EE 193 node index</title>
 <link rel="stylesheet" href="/static/style.css" />
 
 </head>
 <body>
-<h1><a href="https://www.ece.tufts.edu/ee/193AES/">EE 193</a> sensor node index</h1>
+<h1><a href="https://www.ece.tufts.edu/ee/193AES/">Networked Embedded Systems</a> HW 5 node index</h1>
 
-{% for teamname in nodes %}
-<h2>{{teamname}}</h2>
+<table class="iptable">
+<tr><th>UTLN</th><th>Last seen</th><th>Temperature</th></tr>
+{% for utln,data in students.items() %}
+<tr>
+<td><a href="/status/{{utln}}">{{utln}}</a></td>
+{% if data.lastseen %}
+<td class="complete">{{data.lastseen}}</td>
+{% else %}
+<td>(never)</td>
+{% endif %}
 
-<div class="teambox">
-{% for nodeid in nodes[teamname] %}
-<a href="/node/{{teamname}}/{{nodeid}}">
-<div class="nodebox">
-  <div class="nodeid">{{nodeid}}</div>
-  <div class="temp">{{nodes[teamname][nodeid][4] / 1000}}&deg;C</div>
-  <div class="battery">{{nodes[teamname][nodeid][6]}} %</div>
-</div>
-</a>
+{% if data.temperature %}
+<td>{{data.temperature}} &deg;C</td>
+{% else %}
+<td></td>
+{% endif %}
+</tr>
 {% endfor %}
-</div>
 
-{% endfor %}
+</table>
 
 </body>
 </html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8"> 
+
+<script type="module">
+
+// Load the necessary Javascript library
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+// Define the chart dimensions and margins; feel free to adjust these!
+const width = 800;
+const height = 400;
+const marginTop = 20;
+const marginRight = 20;
+const marginBottom = 30;
+const marginLeft = 40;
+
+// Fetch the CSV file from the network
+//const data = await d3.csv("http://en1-pi.eecs.tufts.edu/data/ESPURNA-4D5CB1/power");
+const ic_data = await d3.csv("http://localhost:5000/data/sbell03/ic_temp");
+const thermistor_data = await d3.csv("http://localhost:5000/data/sbell03/thermistor_temp");
+
+// Define the horizontal and vertical scales. These will be used to map the data
+// points from their raw values into X-Y pixel locations on the graph.
+
+// Use a time scale for the horizontal axis so D3 will automatically do time conversions for us.
+// Note that Javascript uses *milliseconds* since the epoch, so we have to multiply timestamps by 1000
+// for everything to come out right.
+
+// To display all the data, set the range to be [min:max]
+//const x = d3.scaleTime([d3.min(data, d => d.timestamp * 1000), d3.max(data, d => d.timestamp  * 1000)], [marginLeft, width - marginRight]);
+
+// Or you can adjust the range if you don't want to display all the data
+// Here we'll display just the last 72 hours
+const x = d3.scaleTime([d3.max(ic_data, d => d.timestamp * 1000) - 72*60*60*1000, d3.max(ic_data, d => d.timestamp  * 1000)], [marginLeft, width - marginRight])
+          .clamp(true); // `clamp` cuts off stuff outside this range (try removing it!)
+
+// Set up the y-scale to fit the ic_data
+const y = d3.scaleLinear([d3.min(ic_data, d => parseFloat(d.value)) - 5, d3.max(ic_data, d => parseFloat(d.value)) + 5], [height - marginBottom, marginTop]);
+
+// Set up the "line generator".  When given a data array later in the program, it will
+// map that data into X and Y coordinates using the scales above and produce a line.
+const line = d3.line()
+    .x(d => x(d.timestamp * 1000))
+    .y(d => y(d.value));
+
+// Create the SVG drawing which will actually hold the plot
+const svg = d3.create("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+// Append a "path" to the SVG; this is the line on the plot
+svg.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "steelblue") // Pick the color
+    .attr("stroke-width", 1.5) // and the line thickness
+    .attr("d", line(ic_data)); // and pass the data to the line generator to get the points to draw
+
+// Append a second line for the thermistor data
+svg.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "orange") // Pick the color
+    .attr("stroke-width", 1.5) // and the line thickness
+    .attr("d", line(thermistor_data)); // and pass the data to the line generator to get the points to draw
+
+
+// Add the x and y axes as SVG "groups" (collections of items)
+svg.append("g")
+    .attr("transform", `translate(0,${height - marginBottom})`) // 'translate' just moves it to the bottom
+    .call(d3.axisBottom(x));
+svg.append("g")
+    .attr("transform", `translate(${marginLeft},0)`)
+    .call(d3.axisLeft(y));
+
+// Append the SVG element.
+plotcontainer.append(svg.node());
+
+</script>
+
+
+
+
+<head>
+
+<title>EE 193 node index</title>
+<link rel="stylesheet" href="/static/style.css" />
+
+</head>
+<body>
+
+<h1>Sensor node status for {{student}}</h1>
+
+<a href="/">Back to main dashboard</a>
+
+
+<h2>Temperature readings over the last 72 hours:</h2>
+<div id="plotcontainer"></div>
+
+
+<h2>Most recent messages:</h2>
+<table class="iptable">
+<tr><th>Topic</th><th>Timestamp</th><th>Message</th></tr>
+{% for line in lastreport %}
+<tr>
+<td>{{line.subtopic}}</td>
+<td>{{line.timestamp}}</td>
+<td>{{line.message}}</td>
+</tr>
+
+{% endfor %}
+
+</body>
+</html>
