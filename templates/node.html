@@ -17,8 +17,8 @@ const marginLeft = 40;
 
 // Fetch the CSV file from the network
 //const data = await d3.csv("http://en1-pi.eecs.tufts.edu/data/ESPURNA-4D5CB1/power");
-const ic_data = await d3.csv("http://localhost:5000/data/sbell03/ic_temp");
-const thermistor_data = await d3.csv("http://localhost:5000/data/sbell03/thermistor_temp");
+const ic_data = await d3.csv("/data/{{student}}/ic_temp");
+const thermistor_data = await d3.csv("/data/{{student}}/thermistor_temp");
 
 // Define the horizontal and vertical scales. These will be used to map the data
 // points from their raw values into X-Y pixel locations on the graph.

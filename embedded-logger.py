@@ -13,26 +13,17 @@ def save_message(client, userdata, message):
     return
 
   topicbits = message.topic.split('/')
-  if len(topicbits) != 3:
-    print(f"Unexpected topic: {message.topic}")
-    return
 
-  team = topicbits[1]
-  nodeid = topicbits[2]
+  student = topicbits[0]
+  subtopic = "/".join(topicbits[2:]) # Put the rest back together
 
   # Timestamp when MQTT message was received
   rxtime = int(time.time())
 
   try:
-    # Unpack the payload
-    (timestamp, sensortemp, thermistortemp, battery) = struct.unpack_from("qiib", message.payload, 0)
-    teamdata = message.payload[19:]
- 
-  #print(f"time: {timestamp}, temp: {sensortemp} therm: {thermistortemp}  batt: {battery}  data: {data}")
-
     conn = sqlite3.connect(DATABASE_FILE)
     c = conn.cursor()
-    c.execute("INSERT INTO messages VALUES (?,?,?,?,?,?,?,?)", (rxtime, timestamp, team, nodeid, sensortemp, thermistortemp, battery, teamdata))
+    c.execute("INSERT INTO messages VALUES (?,?,?,?)", (rxtime, student, subtopic, message.payload.decode()))
     conn.commit()
     conn.close()
   except Exception as e:
@@ -41,14 +32,15 @@ def save_message(client, userdata, message):
     print(f"  {e}")
 
 
-def on_connect(client, userdata, flags, rc):
-  # Subscribe to and record everything under nodes/
-  client.subscribe('nodes/#')
-  client.on_message = save_message
+def on_connect(client, userdata, flags, reason_code, properties):
+  # Subscribe to and record everything with hw5 as part of the topic
+  client.subscribe("+/hw5/#")
+  client.message_callback_add("+/hw5/#", save_message)
 
+  # Ignore everything else!
 
 if __name__ == "__main__":
-  client = mqtt.Client()
+  client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
   client.on_connect = on_connect
 
   client.connect(MQTT_BROKER)
