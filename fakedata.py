@@ -9,7 +9,7 @@ now = time.time()
 N_POINTS = 72
 DATABASE_FILE = "data.db"
 
-t = np.array(range(N_POINTS)) * 3600 + int(now)
+t = np.array(range(N_POINTS)) * 3600 + int(now) - (N_POINTS * 3600) # Make data up to present
 temp = 12 + 7*np.sin(2*np.pi * t / (24*3600))
 sensortemp = temp + 1.2*np.random.random(N_POINTS)
 thermistor = temp + 3*np.random.random(N_POINTS)
