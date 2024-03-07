@@ -12,7 +12,7 @@ DATABASE_FILE = "data.db"
 t = np.array(range(N_POINTS)) * 3600 + int(now) - (N_POINTS * 3600) # Make data up to present
 temp = 12 + 7*np.sin(2*np.pi * t / (24*3600))
 sensortemp = temp + 1.2*np.random.random(N_POINTS)
-thermistor = temp + 3*np.random.random(N_POINTS)
+thermistor = 20 + temp + 3*np.random.random(N_POINTS)
 
 #import matplotlib.pyplot as plt
 #plt.plot(t, sensortemp, t, thermistor)
@@ -20,6 +20,9 @@ thermistor = temp + 3*np.random.random(N_POINTS)
 
 conn = sqlite3.connect(DATABASE_FILE)
 c = conn.cursor()
+
+# Insert an outdated bogus point
+c.execute("INSERT INTO messages VALUES (?,?,?,?)", (str(t[0] - 5000), "sbell03", "ic_temp", 9001))
 
 for i in range(N_POINTS):
   # Logger will split sbell03/hw5/ic_temp into "sbell03" and "ic_temp"

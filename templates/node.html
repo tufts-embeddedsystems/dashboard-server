@@ -27,16 +27,21 @@ const thermistor_data = await d3.csv("/data/{{student}}/thermistor_temp");
 // Note that Javascript uses *milliseconds* since the epoch, so we have to multiply timestamps by 1000
 // for everything to come out right.
 
-// To display all the data, set the range to be [min:max]
-//const x = d3.scaleTime([d3.min(data, d => d.timestamp * 1000), d3.max(data, d => d.timestamp  * 1000)], [marginLeft, width - marginRight]);
+// Figure out the temporal range we want to display (72 hours or whatever exists, whichever is smaller)
+const mostRecent = d3.max(ic_data, d => d.timestamp * 1000);
+const cutoff = Math.max(mostRecent - 72*60*60*1000, d3.min(ic_data, d => d.timestamp * 1000));
 
-// Or you can adjust the range if you don't want to display all the data
-// Here we'll display just the last 72 hours
-const x = d3.scaleTime([d3.max(ic_data, d => d.timestamp * 1000) - 72*60*60*1000, d3.max(ic_data, d => d.timestamp  * 1000)], [marginLeft, width - marginRight])
-          .clamp(true); // `clamp` cuts off stuff outside this range (try removing it!)
+// Only plot data points from within the calculated time range
+const ic_data_filtered = ic_data.filter(function(d) { return d.timestamp*1000 > cutoff });
+const thermistor_data_filtered = thermistor_data.filter(function(d) { return d.timestamp*1000 > cutoff });
 
-// Set up the y-scale to fit the ic_data
-const y = d3.scaleLinear([d3.min(ic_data, d => parseFloat(d.value)) - 5, d3.max(ic_data, d => parseFloat(d.value)) + 5], [height - marginBottom, marginTop]);
+const x = d3.scaleTime([cutoff, mostRecent], [marginLeft, width - marginRight]);
+
+// Set up the y-scale to fit both data lines within the time scale we're plotting
+const y_max = Math.max(d3.max(ic_data_filtered, d => parseFloat(d.value)), d3.max(thermistor_data_filtered, d => parseFloat(d.value)));
+const y_min = Math.min(d3.min(ic_data_filtered, d => parseFloat(d.value)), d3.min(thermistor_data_filtered, d => parseFloat(d.value))); 
+
+const y = d3.scaleLinear([y_min - 5, y_max + 5], [height - marginBottom, marginTop]);
 
 // Set up the "line generator".  When given a data array later in the program, it will
 // map that data into X and Y coordinates using the scales above and produce a line.
@@ -54,14 +59,14 @@ svg.append("path")
     .attr("fill", "none")
     .attr("stroke", "steelblue") // Pick the color
     .attr("stroke-width", 1.5) // and the line thickness
-    .attr("d", line(ic_data)); // and pass the data to the line generator to get the points to draw
+    .attr("d", line(ic_data_filtered)); // and pass the data to the line generator to get the points to draw
 
 // Append a second line for the thermistor data
 svg.append("path")
     .attr("fill", "none")
     .attr("stroke", "orange") // Pick the color
     .attr("stroke-width", 1.5) // and the line thickness
-    .attr("d", line(thermistor_data)); // and pass the data to the line generator to get the points to draw
+    .attr("d", line(thermistor_data_filtered)); // and pass the data to the line generator to get the points to draw
 
 
 // Add the x and y axes as SVG "groups" (collections of items)
@@ -93,16 +98,17 @@ plotcontainer.append(svg.node());
 <a href="/">Back to main dashboard</a>
 
 
-<h2>Temperature readings over the last 72 hours:</h2>
+<h2>Last 72 hours of temperature readings:</h2>
 <div id="plotcontainer"></div>
 
 
 <h2>Most recent messages:</h2>
+Click on any subtopic to download the full log.
 <table class="iptable">
 <tr><th>Topic</th><th>Timestamp</th><th>Message</th></tr>
 {% for line in lastreport %}
 <tr>
-<td>{{line.subtopic}}</td>
+<td><a href="/data/{{student}}/{{line.subtopic}}">{{line.subtopic}}</a></td>
 <td>{{line.timestamp}}</td>
 <td>{{line.message}}</td>
 </tr>
