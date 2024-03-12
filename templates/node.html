@@ -12,13 +12,16 @@ const width = 800;
 const height = 400;
 const marginTop = 20;
 const marginRight = 20;
-const marginBottom = 30;
+const marginBottom = 45;
 const marginLeft = 40;
 
 // Fetch the CSV file from the network
 //const data = await d3.csv("http://en1-pi.eecs.tufts.edu/data/ESPURNA-4D5CB1/power");
 const ic_data = await d3.csv("/data/{{student}}/ic_temp");
 const thermistor_data = await d3.csv("/data/{{student}}/thermistor_temp");
+
+function maxNaN(a, b) { return isNaN(a) ? b : isNaN(b) ? a : Math.max(a, b); }
+function minNaN(a, b) { return isNaN(a) ? b : isNaN(b) ? a : Math.min(a, b); }
 
 // Define the horizontal and vertical scales. These will be used to map the data
 // points from their raw values into X-Y pixel locations on the graph.
@@ -28,8 +31,8 @@ const thermistor_data = await d3.csv("/data/{{student}}/thermistor_temp");
 // for everything to come out right.
 
 // Figure out the temporal range we want to display (72 hours or whatever exists, whichever is smaller)
-const mostRecent = d3.max(ic_data, d => d.timestamp * 1000);
-const cutoff = Math.max(mostRecent - 72*60*60*1000, d3.min(ic_data, d => d.timestamp * 1000));
+const mostRecent = maxNaN(d3.max(ic_data, d => d.timestamp * 1000), d3.max(thermistor_data, d => d.timestamp * 1000));
+const cutoff = Math.max(mostRecent - 72*60*60*1000, minNaN(d3.min(ic_data, d => d.timestamp * 1000), d3.min(thermistor_data, d => d.timestamp * 1000)));
 
 // Only plot data points from within the calculated time range
 const ic_data_filtered = ic_data.filter(function(d) { return d.timestamp*1000 > cutoff });
@@ -38,8 +41,8 @@ const thermistor_data_filtered = thermistor_data.filter(function(d) { return d.t
 const x = d3.scaleTime([cutoff, mostRecent], [marginLeft, width - marginRight]);
 
 // Set up the y-scale to fit both data lines within the time scale we're plotting
-const y_max = Math.max(d3.max(ic_data_filtered, d => parseFloat(d.value)), d3.max(thermistor_data_filtered, d => parseFloat(d.value)));
-const y_min = Math.min(d3.min(ic_data_filtered, d => parseFloat(d.value)), d3.min(thermistor_data_filtered, d => parseFloat(d.value))); 
+const y_max = maxNaN(d3.max(ic_data_filtered, d => parseFloat(d.value)), d3.max(thermistor_data_filtered, d => parseFloat(d.value)));
+const y_min = minNaN(d3.min(ic_data_filtered, d => parseFloat(d.value)), d3.min(thermistor_data_filtered, d => parseFloat(d.value))); 
 
 const y = d3.scaleLinear([y_min - 5, y_max + 5], [height - marginBottom, marginTop]);
 
@@ -67,6 +70,17 @@ svg.append("path")
     .attr("stroke", "orange") // Pick the color
     .attr("stroke-width", 1.5) // and the line thickness
     .attr("d", line(thermistor_data_filtered)); // and pass the data to the line generator to get the points to draw
+
+// Custom-made legend
+svg.append("text")
+    .text("IC temp")
+    .attr("fill", "steelblue")
+    .attr("transform", `translate(${marginLeft + 10},15)`);
+
+svg.append("text")
+    .text("Thermistor")
+    .attr("fill", "orange")
+    .attr("transform", `translate(${marginLeft + 100},15)`);
 
 
 // Add the x and y axes as SVG "groups" (collections of items)
