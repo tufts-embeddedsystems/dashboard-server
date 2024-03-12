@@ -35,8 +35,9 @@ const mostRecent = maxNaN(d3.max(ic_data, d => d.timestamp * 1000), d3.max(therm
 const cutoff = Math.max(mostRecent - 72*60*60*1000, minNaN(d3.min(ic_data, d => d.timestamp * 1000), d3.min(thermistor_data, d => d.timestamp * 1000)));
 
 // Only plot data points from within the calculated time range
-const ic_data_filtered = ic_data.filter(function(d) { return d.timestamp*1000 > cutoff });
-const thermistor_data_filtered = thermistor_data.filter(function(d) { return d.timestamp*1000 > cutoff });
+// And throw out any that aren't valid numbers
+const ic_data_filtered = ic_data.filter(function(d) { return d.timestamp*1000 > cutoff & !isNaN(parseFloat(d.value))});
+const thermistor_data_filtered = thermistor_data.filter(function(d) { return d.timestamp*1000 > cutoff & !isNaN(parseFloat(d.value))});
 
 const x = d3.scaleTime([cutoff, mostRecent], [marginLeft, width - marginRight]);
 
