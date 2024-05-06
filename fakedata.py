@@ -24,6 +24,10 @@ c = conn.cursor()
 # Insert an outdated bogus point
 c.execute("INSERT INTO messages VALUES (?,?,?,?)", (str(t[0] - 5000), "sbell03", "ic_temp", 9001))
 
+# Insert a point that's not a number
+c.execute("INSERT INTO messages VALUES (?,?,?,?)", (str(t[0]), "sbell03", "ic_temp", "xxxx"))
+
+
 for i in range(N_POINTS):
   # Logger will split sbell03/hw5/ic_temp into "sbell03" and "ic_temp"
   # Even though the timestamp is stored as an integer, the query is a string, so we have to convert it!
