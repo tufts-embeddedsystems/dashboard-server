@@ -9,10 +9,9 @@ DATABASE_FILE = "data.db"
 
 def save_message(client, userdata, message):
 
-  #print(f"{message.topic}: {message.payload}")
-
   topicbits = message.topic.split('/')
   if len(topicbits) != 3:
+    # This should not happen if we're subscribed to the right things
     print(f"Unexpected topic: {message.topic}")
     return
 
@@ -23,7 +22,11 @@ def save_message(client, userdata, message):
   # Timestamp when MQTT message was received
   rxtime = int(time.time())
 
-  payload = message.payload.decode() # TODO: error handling on this
+  try:
+    payload = message.payload.decode()
+  except Exception as e:
+      print(f"Error decoding payload as character string {e}")
+      print(f"Problem message was {message.topic}: {payload}\n")
 
   if updatetype == "tempupdate":
     updatebits = payload.split(',')
@@ -31,17 +34,25 @@ def save_message(client, userdata, message):
       print(f"Invalid update (expected three columns)! {message.topic}: {payload}")
       return
 
-    timestamp = int(updatebits[0])
-    temp = float(updatebits[1])
-    battery = float(updatebits[2])
+    try:
+      timestamp = int(updatebits[0])
+      temp = float(updatebits[1])
+      battery = float(updatebits[2])
 
-    print(f"{team}/{nodeid}  time: {timestamp}, temp: {temp}, batt: {battery}")
-    conn = sqlite3.connect(DATABASE_FILE)
-    c = conn.cursor()
-    c.execute("INSERT INTO updates VALUES (?,?,?,?,?,?)", \
-        (rxtime, timestamp, team, nodeid, temp, battery))
-    conn.commit()
-    conn.close()
+      print(f"{team}/{nodeid}  time: {timestamp}, temp: {temp}, batt: {battery}")
+      conn = sqlite3.connect(DATABASE_FILE)
+      c = conn.cursor()
+      c.execute("INSERT INTO updates VALUES (?,?,?,?,?,?)", \
+          (rxtime, timestamp, team, nodeid, temp, battery))
+      conn.commit()
+      conn.close()
+
+    except ValueError as e:
+      print(f"Error converting values to numbers: {e}")
+      print(f"Problem message was {message.topic}: {payload}\n")
+    except Exception as e:
+      print(f"Uh, oh: {e}")
+      print(f"Problem message was {message.topic}: {payload}\n")
 
 
   elif updatetype == "properties":
@@ -59,6 +70,11 @@ def save_message(client, userdata, message):
 
     except json.JSONDecodeError as e:
       print(f"JSON validation failed: {e}")
+      print(f"Problem message was {message.topic}: {payload}\n")
+    except Exception as e:
+      print(f"Uh, oh: {e}")
+      print(f"Problem message was {message.topic}: {payload}\n")
+
 
   else:
     # We shouldn't end up here unless we subscribed to the wrong thing!
