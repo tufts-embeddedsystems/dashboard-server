@@ -22,7 +22,7 @@ def index():
   c = conn.cursor()
 
   # Get all of the teams represented in the database
-  result = c.execute("SELECT DISTINCT team FROM messages")
+  result = c.execute("SELECT DISTINCT team FROM updates")
   teams = [r[0] for r in result]
 
   # Or just hard-code the teams, which saves a query
@@ -32,12 +32,12 @@ def index():
   # Get the list of nodes for each team
   for t in teams:
     nodes[t] = {}
-    result = c.execute("SELECT DISTINCT nodeid FROM messages WHERE team IS ?", (t,))
+    result = c.execute("SELECT DISTINCT nodeid FROM updates WHERE team IS ?", (t,))
     nodeids = [n[0] for n in result]
 
     # Get the most recent update from each node
     for n in nodeids:
-      result = c.execute("SELECT * FROM messages WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
+      result = c.execute("SELECT * FROM updates WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
       nodes[t][n] = result.fetchone()
 
   conn.close()
@@ -49,10 +49,10 @@ def index():
 def node(team, nodeid):
   conn = sqlite3.connect(dbFile)
   c = conn.cursor()
-  result = c.execute("SELECT * FROM messages WHERE team IS ? AND nodeid IS ? ORDER BY timestamp", (team, nodeid))
-  page = "time, temp1, temp2, battery, data<br/>"
+  result = c.execute("SELECT * FROM updates WHERE team IS ? AND nodeid IS ? ORDER BY timestamp", (team, nodeid))
+  page = "time, temp, battery<br/>"
   for r in result:
-    page += f"{r[0]}, {r[4]}, {r[5]}, {r[6]}, {r[7]}<br/>"
+    page += f"{r[1]}, {r[4]}, {r[5]}<br/>"
  
   conn.close()
   return page
