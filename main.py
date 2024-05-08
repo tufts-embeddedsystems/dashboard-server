@@ -44,6 +44,33 @@ def index():
 
   return render_template('index.html', nodes = nodes)
 
+# TODO: not sure if we need to exclude teamF from URL '/node/<team>/<nodeid>'
+@app.route('/node/teamF/<nodeid>')
+def node(team, nodeid):
+  conn = sqlite3.connect(dbFile)
+  c = conn.cursor()
+  result = c.execute(
+    "SELECT * FROM updates WHERE team IS ? AND nodeid IS ? ORDER BY timestamp",
+    (team, nodeid)
+  )
+
+# create a json object
+  jsondata = []
+  for r in result:
+    # Convert data into a list of dictionaries
+    jsondata.append({'time': r[1], 'temp': r[4], 'battery': r[5]})
+  print(f"jsondata:\n\t{jsondata}")
+
+  conn.close()
+  return render_template(
+    'dashboard.html',
+    data=json.dumps(jsondata),
+    team=team, nodeid=nodeid,
+    # also parse latest data for display
+    time=time2str(jsondata[-1]['time']),
+    temp=jsondata[-1]['temp'],
+    battery=jsondata[-1]['battery']
+  )
 
 @app.route('/node/<team>/<nodeid>')
 def node(team, nodeid):
@@ -53,7 +80,7 @@ def node(team, nodeid):
   page = "time, temp, battery<br/>"
   for r in result:
     page += f"{r[1]}, {r[4]}, {r[5]}<br/>"
- 
+
   conn.close()
   return page
 

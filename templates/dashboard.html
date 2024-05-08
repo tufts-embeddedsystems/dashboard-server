@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@^3"></script>
+    <!-- Time axis: Include Luxon library and time adaptor -->
+    <script src="https://cdn.jsdelivr.net/npm/luxon@^2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@^1"></script>
+</head>
+
+<body>
+    <div class="header">
+        <text style="text-align: left; display: inline-block;">EE193 Dashboard</text>
+        <text style="width: 85%; text-align: right; display: inline-block;">Latest: {{time}}</text>
+    </div>
+
+    <div class="navbar">
+        <h1>Fire Nation</h1>
+        <b>Node: {{nodeid}}</b><br/>
+        <a href="/" style="color: #EBDDFF;">Back</a>
+
+        <div class="menu" style="margin: 50px 0;">
+        <h2>Home</h2>
+        <h2>Temperature &nbsp;🌡️</h2>
+        <h2>Battery &nbsp;🔋</h2>
+        <h2>Settings &nbsp;⚙️</h2>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="card">
+            <span class="icon">
+                <div style="display: inline-block;">
+                    <h3>Temperature🌡️</h3>
+                    <p>{{ temp }}°C</p>
+                </div>
+                <div style="display: inline-block; padding: 0 10px;">
+                    <h3>Battery🔋</h3>
+                    <p>{{ battery }}%</p>
+                </div>
+                <div style="display: inline-block; padding: 0 5px">
+                    <h3>Alert</h3>
+                    <p> {{ alert }} -- </p>
+                </div>
+            </span>
+        </div>
+
+        <div class="card">
+            <canvas id="tempChart" width="800" height="350" aria-label="Hello temperature World">
+            </canvas>
+        </div>
+
+        <div class="card">
+            <canvas id="batteryChart" width="800" height="350" aria-label="Hello battery World">
+            </canvas>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>Temp (°C)</th>
+                    <th>Battery (%)</th>
+                </tr>
+            </thead>
+            <tbody id="data-table">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const data = JSON.parse('{{ data | safe }}');
+
+        // Populate data table
+        const dataTable = document.getElementById('data-table');
+        data.forEach(item => {
+            const row = `<tr>
+                <td>${item.time}</td>
+                <td>${item.temp}</td>
+                <td>${item.battery}</td>
+            </tr>`;
+            dataTable.innerHTML += row;
+        });
+
+        // Chart.js for temperature visualization
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        const tempChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(item => item.time * 1000),
+                datasets: [{
+                    label: 'Temp Read',
+                    data: data.map(item => item.temp),
+                    borderColor: '#40739e',
+                    backgroundColor: '#487eb0',
+                }]
+            },
+            options: {
+                responsive: false,
+                plugins: {
+                    title: {
+                        align: 'start',
+                        color: '#68548E',
+                        display: true,
+                        font: {
+                            size: 18
+                        },
+                        text: 'Temperature'
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                                // unit: 'second',
+                                displayFormats: {
+                                    day: 'DD',
+                                },
+                                tooltipFormat: 'DD HH:mm:ss'
+                            },
+                        title: {
+                            display: true,
+                            align: 'end',
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Temperature Measurement(°C)'
+                        }
+                    }
+                }
+            }
+        });
+
+        // battery visualization
+        const ctx2 = document.getElementById('batteryChart').getContext('2d');
+        const batteryChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Battery Data',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    data: data.map(item => ({
+                        x: item.time * 1000,
+                        y: item.battery
+                    })),
+                }]
+            },
+            options: {
+                plugins: {
+                    title: {
+                        align: 'start',
+                        color: '#68548E',
+                        display: true,
+                        font: {
+                            size: 18
+                        },
+                        text: 'Battery'
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            // unit: 'month',
+                            displayFormats: {
+                                month: 'MMM YYYY'
+                            },
+                            tooltipFormat: 'DD HH:mm:ss'
+                            },
+                        title: {
+                            display: true,
+                            align: 'end',
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Percentage Value (%)'
+                        }
+                    }
+                }
+            }
+        });
+
+    </script>
+</body>
+
+</html>
