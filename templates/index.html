@@ -2,23 +2,25 @@
 <meta charset="UTF-8"> 
 <head>
 
-<title>EE 193 sensor node index</title>
-<link rel="stylesheet" href="/static/style.css" />
+<title>EE 153 sensor node index</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"/>
 
 </head>
 <body>
-<h1><a href="https://www.ece.tufts.edu/ee/193AES/">EE 193</a> sensor node index</h1>
+<h1><a href="https://www.ece.tufts.edu/ee/153/">EE 153</a> sensor node index</h1>
 
 {% for teamname in nodes %}
 <h2>{{teamname}}</h2>
 
 <div class="teambox">
 {% for nodeid in nodes[teamname] %}
-<a href="/node/{{teamname}}/{{nodeid}}">
+<a href="{{ url_for('node', team=teamname, nodeid=nodeid) }}">
 <div class="nodebox">
   <div class="nodeid">{{nodeid}}</div>
-  <div class="temp">{{nodes[teamname][nodeid][4]}}&deg;C</div>
-  <div class="battery">{{nodes[teamname][nodeid][6]}}</div>
+  <div class="status">Status: {{nodes[teamname][nodeid][4]}}</div>
+  <div class="rssi">🛜 {{nodes[teamname][nodeid][6]}}</div>
+  <div class="battery">🔋 {{nodes[teamname][nodeid][5]}}</div>
+<!--🌡️ -->
 </div>
 </a>
 {% endfor %}

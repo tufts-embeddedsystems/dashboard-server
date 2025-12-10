@@ -1,15 +1,22 @@
 import paho.mqtt.publish as publish
+import json
+import random
 import time
 
-MQTT_BROKER = "en1-pi.eecs.tufts.edu"
+MQTT_BROKER = "bell-mqtt.eecs.tufts.edu"
 
 now = int(time.time())
+temp = round(25 + 3 * random.random(), 1) # Fake indoor temperature, fabricated to 0.1 C
 
-publish.single("teamA/node0/tempupdate", f"{now},26.2,89.4", hostname=MQTT_BROKER)
+update = {"measurements": [ [now, temp] ],
+          "board_time": now,
+          "heartbeat": {
+              "status":0,
+              "rssi":-30,
+              "battery_percent":100.0
+            }
+          }
 
-publish.single("teamA/node0/properties", '{"name":"NODE ZERO", "location":"Behind the SEC?"}', hostname=MQTT_BROKER)
+publish.single("teamX/node0/update", json.dumps(update), hostname=MQTT_BROKER)
 
-# 
-#publish.single("teamA/node0/properties", "(THIS WOULD BE JSON IF WE WERE DOING THIS RIGHT.)", hostname=MQTT_BROKER)
 
-#publish.single("teamA/node0/firmware", "1234", hostname=MQTT_BROKER)

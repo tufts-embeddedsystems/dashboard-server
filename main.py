@@ -22,7 +22,7 @@ def index():
   c = conn.cursor()
 
   # Get all of the teams represented in the database
-  result = c.execute("SELECT DISTINCT team FROM updates")
+  result = c.execute("SELECT DISTINCT team FROM heartbeats")
   teams = [r[0] for r in result]
 
   # Or just hard-code the teams, which saves a query
@@ -32,12 +32,12 @@ def index():
   # Get the list of nodes for each team
   for t in teams:
     nodes[t] = {}
-    result = c.execute("SELECT DISTINCT nodeid FROM updates WHERE team IS ?", (t,))
+    result = c.execute("SELECT DISTINCT nodeid FROM heartbeats WHERE team IS ?", (t,))
     nodeids = [n[0] for n in result]
 
     # Get the most recent update from each node
     for n in nodeids:
-      result = c.execute("SELECT * FROM updates WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
+      result = c.execute("SELECT * FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
       nodes[t][n] = result.fetchone()
 
   conn.close()
@@ -60,5 +60,16 @@ def node(team, nodeid):
 @app.route('/time')
 def time():
   return time.localtime()
+
+@app.route('/errorlog')
+def errorlog():
+  with open("errors.log", "r") as errorlog:
+    errorlog.seek(0, 2) # Jump to EOF
+    fsize = errorlog.tell() # How many bytes is the file?
+    errorlog.seek(max(fsize-5000, 0), 0) # Jump back a bit
+
+    response = make_response(errorlog.read())
+    response.headers["Content-Type"] = "text"
+    return response
 
 

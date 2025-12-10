@@ -4,15 +4,24 @@ import sqlite3
 import paho.mqtt.client as mqtt
 import json
 
-MQTT_BROKER = "en1-pi.eecs.tufts.edu"
+MQTT_BROKER = "bell-mqtt.eecs.tufts.edu"
 DATABASE_FILE = "data.db"
+LOG_FILE = "errors.log" # This can be read by students so they can see their errors
+
+def log_error(msg):
+  try:
+    log = open(LOG_FILE, "a")
+    log.write(f"{time.asctime()}: {msg}\n\n")
+    log.close()
+  except Exception as e:
+    print(f"Failed to write to error log: {e}")
+    print(f"Original message was:\n{msg}")
 
 def save_message(client, userdata, message):
-
   topicbits = message.topic.split('/')
   if len(topicbits) != 3:
     # This should not happen if we're subscribed to the right things
-    print(f"Unexpected topic: {message.topic}")
+    log_error(f"Unexpected topic: {message.topic}")
     return
 
   team = topicbits[0]
@@ -23,73 +32,57 @@ def save_message(client, userdata, message):
   rxtime = int(time.time())
 
   try:
-    payload = message.payload.decode()
+    payload_string = message.payload.decode()
   except Exception as e:
-      print(f"Error decoding payload as character string {e}")
-      print(f"Problem message was {message.topic}: {payload}\n")
+    log_error(f"Error decoding payload as character string {e}")
+    log_error(f"Problem message was {message.topic}: {message.payload}")
 
-  if updatetype == "tempupdate":
-    updatebits = payload.split(',')
-    if len(updatebits) != 3:
-      print(f"Invalid update (expected three columns)! {message.topic}: {payload}")
-      return
+  try:
+    payload = json.loads(payload_string)
+  except json.JSONDecodeError as e:
+    log_error(f"Error decoding payload as JSON: {e}\n\npayload was {payload_string}")
+    return # If we can't get the JSON out, we're toast!
 
-    try:
-      timestamp = int(updatebits[0])
-      temp = float(updatebits[1])
-      battery = float(updatebits[2])
+  board_time = payload.get("board_time", rxtime)
 
-      print(f"{team}/{nodeid}  time: {timestamp}, temp: {temp}, batt: {battery}")
-      conn = sqlite3.connect(DATABASE_FILE)
-      c = conn.cursor()
-      c.execute("INSERT INTO updates VALUES (?,?,?,?,?,?)", \
-          (rxtime, timestamp, team, nodeid, temp, battery))
-      conn.commit()
-      conn.close()
+  if "measurements" in payload:
+    pass
+  
 
-    except ValueError as e:
-      print(f"Error converting values to numbers: {e}")
-      print(f"Problem message was {message.topic}: {payload}\n")
-    except Exception as e:
-      print(f"Uh, oh: {e}")
-      print(f"Problem message was {message.topic}: {payload}\n")
+  if "heartbeat" in payload:
+    heartbeat = payload["heartbeat"]
+    if "status" in heartbeat:
+      try:
+        status = int(heartbeat["status"]) # status is required for heartbeat to be valid
+        battery_percent = float(heartbeat.get("battery_percent", -1)) # battery_percent is optional but supported by dashboard
+        rssi = int(heartbeat.get("rssi", 0)) # rssi is optional but supported by dashboard
+        # everything else is optional and not supported, so we'll save the whole thing
 
+        conn = sqlite3.connect(DATABASE_FILE)
+        c = conn.cursor()
+        c.execute("INSERT INTO heartbeats VALUES (?,?,?,?,?,?,?,?)", \
+          (rxtime, board_time, team, nodeid, status, battery_percent, rssi, json.dumps(heartbeat)))
+        conn.commit()
+        conn.close()
 
-  elif updatetype == "properties":
-    try:
-      # Validate JSON, but we'll just insert the original text
-      json.loads(payload)
-
-      print(f"{team}/{nodeid}  properties: {payload}")
-
-      conn = sqlite3.connect(DATABASE_FILE)
-      c = conn.cursor()
-      c.execute("INSERT INTO properties VALUES (?,?,?,?)", (rxtime, team, nodeid, payload))
-      conn.commit()
-      conn.close()
-
-    except json.JSONDecodeError as e:
-      print(f"JSON validation failed: {e}")
-      print(f"Problem message was {message.topic}: {payload}\n")
-    except Exception as e:
-      print(f"Uh, oh: {e}")
-      print(f"Problem message was {message.topic}: {payload}\n")
-
-
-  else:
-    # We shouldn't end up here unless we subscribed to the wrong thing!
-    print(f"Ignoring subtopic {updatetype} ({message.topic}: {payload}")
+      except ValueError as e:
+        log_error(f"Error converting values to numbers: {e}")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
+      # TODO: sqlite error, maybe try again?
+      except Exception as e:
+        log_error(f"Failed to save message: {e}")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
 
   
-def on_connect(client, userdata, flags, reason_code, properties):
+def on_connect(client, userdata, flags, reason_code): # Add properties arg for 2.x
   # Subscribe to and record all of the tempupdates
-  client.subscribe('+/+/tempupdate')
-  client.subscribe('+/+/properties')
+  client.subscribe('+/+/update')
   client.on_message = save_message
 
 
 if __name__ == "__main__":
-  client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+  client = mqtt.Client() # Use version 1.x for now
+  #client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
   client.on_connect = on_connect
   client.connect(MQTT_BROKER)
