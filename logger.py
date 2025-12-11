@@ -11,7 +11,7 @@ LOG_FILE = "errors.log" # This can be read by students so they can see their err
 def log_error(msg):
   try:
     log = open(LOG_FILE, "a")
-    log.write(f"{time.asctime()}: {msg}\n\n")
+    log.write(f"{time.asctime()}: {msg}\n")
     log.close()
   except Exception as e:
     print(f"Failed to write to error log: {e}")
@@ -44,7 +44,7 @@ def save_message(client, userdata, message):
     log_error(f"Error decoding payload as JSON: {e}\n\nProblem message payload was {message.topic}: {payload_string}")
     return # If we can't get the JSON out, we're toast!
 
-  board_time = payload.get("board_time", rxtime)
+  board_time = payload.get("board_time", rxtime) # For heartbeat
 
   if "measurements" in payload:
 
@@ -64,7 +64,21 @@ def save_message(client, userdata, message):
     conn = sqlite3.connect(DATABASE_FILE)
     c = conn.cursor()
 
+    if type(payload["measurements"]) is not list:
+      log_error(f"`measurements` is type {type(payload['measurements'])}, expected a list")
+      log_error(f"Problem message was {message.topic}: {payload}\n")
+
     for m in payload["measurements"]:
+      if type(m) is not list:
+        log_error(f"Measurement list contains a value of type {type(payload['measurements'])}; each item should be a list")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
+        return
+
+      if len(m) != 2:
+        log_error(f"Measurement has {len(m)} items; should have exactly 2!")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
+        return
+
       try:
         measurement_time = int(m[0]) + time_offset
         measurement_temp = float(m[1])
@@ -74,6 +88,9 @@ def save_message(client, userdata, message):
 
       except ValueError as e:
         log_error(f"Error converting measurement values: {e}")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
+      except Exception as e:
+        log_error(f"Failed to log measurement: {e}")
         log_error(f"Problem message was {message.topic}: {payload}\n")
  
     conn.commit()
@@ -100,7 +117,7 @@ def save_message(client, userdata, message):
         log_error(f"Problem message was {message.topic}: {payload}\n")
       # TODO: sqlite error, maybe try again?
       except Exception as e:
-        log_error(f"Failed to save message: {e}")
+        log_error(f"Failed to save heartbeat message: {e}")
         log_error(f"Problem message was {message.topic}: {payload}\n")
 
   
