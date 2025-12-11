@@ -36,11 +36,12 @@ def save_message(client, userdata, message):
   except Exception as e:
     log_error(f"Error decoding payload as character string {e}")
     log_error(f"Problem message was {message.topic}: {message.payload}")
+    return
 
   try:
     payload = json.loads(payload_string)
   except json.JSONDecodeError as e:
-    log_error(f"Error decoding payload as JSON: {e}\n\npayload was {payload_string}")
+    log_error(f"Error decoding payload as JSON: {e}\n\nProblem message payload was {message.topic}: {payload_string}")
     return # If we can't get the JSON out, we're toast!
 
   board_time = payload.get("board_time", rxtime)
