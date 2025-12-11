@@ -45,17 +45,37 @@ def index():
   return render_template('index.html', nodes = nodes)
 
 
-@app.route('/node/<team>/<nodeid>')
-def node(team, nodeid):
+@app.route('/status/<team>/<nodeid>')
+def status(team, nodeid):
+  # Just grab the latest payload on every topic
+  # The JS code on the page is going to request the temperature sensor readings separately
   conn = sqlite3.connect(dbFile)
   c = conn.cursor()
-  result = c.execute("SELECT * FROM updates WHERE team IS ? AND nodeid IS ? ORDER BY timestamp", (team, nodeid))
-  page = "time, temp, battery<br/>"
-  for r in result:
-    page += f"{r[1]}, {r[4]}, {r[5]}<br/>"
- 
+
+  # TODO: error handling if team/node isn't valid
+
+  # Note: this use of a "bare column" select is a sqlite-specific feature
+  #result = c.execute("SELECT max(timestamp),subtopic,message FROM messages WHERE student = ?  GROUP BY subtopic", (student,))
+  #lastreport = [{"timestamp":time2str(r[0]), "subtopic":r[1], "message":r[2]} for r in result]
+
+  return render_template('node.html', lastreport = {}, team = team, nodeid = nodeid)
+
+
+@app.route('/data/<team>/<nodeid>')
+def data(team, nodeid):
+  conn = sqlite3.connect(dbFile)
+  c = conn.cursor()
+  result = c.execute("SELECT * FROM measurements WHERE team IS ? AND nodeid IS ? ORDER BY timestamp", (team, nodeid))
+
+  headers = "timestamp,temp\n"
+  blob = "\n".join(["{},{}".format(r[1], r[4]) for r in result])
+
   conn.close()
-  return page
+
+  response = make_response(headers + blob)
+  #response.headers['Content-Type'] = 'text/plain'
+  response.headers['Content-Type'] = 'text/csv'
+  return response
 
 @app.route('/time')
 def time():

@@ -14,7 +14,7 @@
 
 <div class="teambox">
 {% for nodeid in nodes[teamname] %}
-<a href="{{ url_for('node', team=teamname, nodeid=nodeid) }}">
+<a href="{{ url_for('status', team=teamname, nodeid=nodeid) }}">
 <div class="nodebox">
   <div class="nodeid">{{nodeid}}</div>
   <div class="status">Status: {{nodes[teamname][nodeid][4]}}</div>

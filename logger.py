@@ -47,8 +47,37 @@ def save_message(client, userdata, message):
   board_time = payload.get("board_time", rxtime)
 
   if "measurements" in payload:
-    pass
-  
+
+    # Calculate the time offset to add to the measurements
+    # If the board is behind, this number will be positive, and will "catch up" the measurement timestamps to the real time
+    if "board_time" in payload:
+      try:
+        time_offset = rxtime - int(payload["board_time"])
+      except ValueError as e:
+        log_error(f"Error converting `board_time` to integer: {e}")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
+     
+    else:
+      time_offset = 0
+
+
+    conn = sqlite3.connect(DATABASE_FILE)
+    c = conn.cursor()
+
+    for m in payload["measurements"]:
+      try:
+        measurement_time = int(m[0]) + time_offset
+        measurement_temp = float(m[1])
+
+        c.execute("INSERT INTO measurements VALUES (?,?,?,?,?)", \
+          (rxtime, measurement_time, team, nodeid, measurement_temp))
+
+      except ValueError as e:
+        log_error(f"Error converting measurement values: {e}")
+        log_error(f"Problem message was {message.topic}: {payload}\n")
+ 
+    conn.commit()
+    conn.close()
 
   if "heartbeat" in payload:
     heartbeat = payload["heartbeat"]

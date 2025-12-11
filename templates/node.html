@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<meta charset="UTF-8"> 
+
+<script type="module">
+
+// Load the necessary Javascript library
+import * as d3 from "https://cdn.jsdelivr.net/npm/d3@7/+esm";
+
+// Define the chart dimensions and margins; feel free to adjust these!
+const width = 800;
+const height = 400;
+const marginTop = 20;
+const marginRight = 20;
+const marginBottom = 45;
+const marginLeft = 40;
+
+// Fetch the CSV file from the network
+const ic_data = await d3.csv("{{ url_for('data', team=team, nodeid=nodeid) }}");
+
+function maxNaN(a, b) { return isNaN(a) ? b : isNaN(b) ? a : Math.max(a, b); }
+function minNaN(a, b) { return isNaN(a) ? b : isNaN(b) ? a : Math.min(a, b); }
+
+// Define the horizontal and vertical scales. These will be used to map the data
+// points from their raw values into X-Y pixel locations on the graph.
+
+// Use a time scale for the horizontal axis so D3 will automatically do time conversions for us.
+// Note that Javascript uses *milliseconds* since the epoch, so we have to multiply timestamps by 1000
+// for everything to come out right.
+
+// Figure out the temporal range we want to display (72 hours or whatever exists, whichever is smaller)
+const mostRecent = d3.max(ic_data, d => d.timestamp * 1000);
+const cutoff = Math.max(mostRecent - 72*60*60*1000, d3.min(ic_data, d => d.timestamp * 1000));
+
+// Only plot data points from within the calculated time range
+// And throw out any that aren't valid numbers
+const ic_data_filtered = ic_data.filter(function(d) { return d.timestamp*1000 > cutoff & !isNaN(parseFloat(d.temp))});
+
+const x = d3.scaleTime([cutoff, mostRecent], [marginLeft, width - marginRight]);
+
+// Set up the y-scale to fit both data lines within the time scale we're plotting
+const y_max = d3.max(ic_data_filtered, d => parseFloat(d.temp));
+const y_min = d3.min(ic_data_filtered, d => parseFloat(d.temp));
+
+const y = d3.scaleLinear([y_min - 5, y_max + 5], [height - marginBottom, marginTop]);
+
+// Set up the "line generator".  When given a data array later in the program, it will
+// map that data into X and Y coordinates using the scales above and produce a line.
+const line = d3.line()
+    .x(d => x(d.timestamp * 1000))
+    .y(d => y(d.temp));
+
+// Create the SVG drawing which will actually hold the plot
+const svg = d3.create("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+// Append a "path" to the SVG; this is the line on the plot
+svg.append("path")
+    .attr("fill", "none")
+    .attr("stroke", "steelblue") // Pick the color
+    .attr("stroke-width", 1.5) // and the line thickness
+    .attr("d", line(ic_data_filtered)); // and pass the data to the line generator to get the points to draw
+
+// Custom-made legend
+svg.append("text")
+    .text("IC temp")
+    .attr("fill", "steelblue")
+    .attr("transform", `translate(${marginLeft + 10},15)`);
+
+// Add the x and y axes as SVG "groups" (collections of items)
+svg.append("g")
+    .attr("transform", `translate(0,${height - marginBottom})`) // 'translate' just moves it to the bottom
+    .call(d3.axisBottom(x));
+svg.append("g")
+    .attr("transform", `translate(${marginLeft},0)`)
+    .call(d3.axisLeft(y));
+
+// Append the SVG element.
+plotcontainer.append(svg.node());
+
+</script>
+
+
+
+<title>EE 153 node status</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+</head>
+<body>
+
+<h1>Sensor node status for {{team}} {{nodeid}}</h1>
+
+<a href="{{ url_for('index') }}">Back to main dashboard</a>
+
+
+<h2>Last 72 hours of temperature readings:</h2>
+<div id="plotcontainer"></div>
+
+
+</body>
+</html>
