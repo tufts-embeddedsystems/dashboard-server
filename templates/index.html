@@ -7,20 +7,39 @@
 
 </head>
 <body>
+<div class="page">
 <h1><a href="https://www.ece.tufts.edu/ee/153/">EE 153</a> sensor node index</h1>
 
+<div class="nodes">
 {% for teamname in nodes %}
+<div class="teambox">
 <h2>{{teamname}}</h2>
 
-<div class="teambox">
 {% for nodeid in nodes[teamname] %}
 <a href="{{ url_for('status', team=teamname, nodeid=nodeid) }}">
+{% if nodes[teamname][nodeid]["status"] == 0 %}
+<div class="nodebox nodebox-ok">
+{% elif nodes[teamname][nodeid]["status"] == 1 %}
+<div class="nodebox nodebox-warning">
+{% elif nodes[teamname][nodeid]["status"] == 2 %}
+<div class="nodebox nodebox-error">
+{% else %}
 <div class="nodebox">
+{% endif %}
   <div class="nodeid">{{nodeid}}</div>
-  <div class="status">Status: {{nodes[teamname][nodeid][4]}}</div>
-  <div class="rssi">🛜 {{nodes[teamname][nodeid][6]}}</div>
-  <div class="battery">🔋 {{nodes[teamname][nodeid][5]}}</div>
-<!--🌡️ -->
+  <div class="temp">🌡️ {{nodes[teamname][nodeid]["temp"]}} </div>
+{% if nodes[teamname][nodeid]["rssi"] < 0 %}
+  <div class="rssi">🛜 {{nodes[teamname][nodeid]["rssi"]}}</div>
+{% endif %}
+{% if nodes[teamname][nodeid]["battery"] >= 0 %}
+  <div class="battery">🔋 {{nodes[teamname][nodeid]["battery"]}}%</div>
+{% endif %}
+
+{% if nodes[teamname][nodeid]["timestamp-age"] // 3600 > 24 %}
+  <div class="lastreport lastreport-old">{{nodes[teamname][nodeid]["timestamp"]}}</div>
+{% else %}
+  <div class="lastreport">{{nodes[teamname][nodeid]["timestamp"]}}</div>
+{% endif %}
 </div>
 </a>
 {% endfor %}
@@ -28,5 +47,8 @@
 
 {% endfor %}
 
+</div>
+
+</div>
 </body>
 </html>

@@ -11,7 +11,7 @@ def time2str(epochtime):
   if epochtime == 0:
     return "(unknown)"
   else:
-    return time.strftime("%A, %m/%d %I:%M%p", time.localtime(epochtime))
+    return time.strftime("%a, %m/%d %I:%M%p", time.localtime(epochtime))
 
 # Main page
 # Show all of the devices with their hostname / IP address
@@ -22,12 +22,14 @@ def index():
   c = conn.cursor()
 
   # Get all of the teams represented in the database
-  result = c.execute("SELECT DISTINCT team FROM heartbeats")
-  teams = [r[0] for r in result]
+  #result = c.execute("SELECT DISTINCT team FROM heartbeats")
+  #teams = [r[0] for r in result]
 
   # Or just hard-code the teams, which saves a query
-  #teams = ["eccentric-egret", "floundering-flamingo"]
+  teams = ["teamK", "teamL", "teamM", "teamN", "teamO", "teamP", "teamQ", "teamR", "teamX"]
   nodes = {}
+
+  now = int(time.time())
 
   # Get the list of nodes for each team
   for t in teams:
@@ -35,10 +37,27 @@ def index():
     result = c.execute("SELECT DISTINCT nodeid FROM heartbeats WHERE team IS ?", (t,))
     nodeids = [n[0] for n in result]
 
-    # Get the most recent update from each node
+    # Get the most recent heartbeat from each node
     for n in nodeids:
       result = c.execute("SELECT * FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
-      nodes[t][n] = result.fetchone()
+      heartbeat = result.fetchone()
+
+      result = c.execute("SELECT sensortemp FROM measurements WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
+      temp = result.fetchone()
+
+      # If a node has published a heartbeat but never a temperature update, the
+      # query will return None
+      if temp is None:
+        temp = ("N/A",)
+
+      nodes[t][n] = {
+        "timestamp": time2str(heartbeat[0]),
+        "timestamp-age": now - heartbeat[0],
+        "status": heartbeat[4],
+        "rssi": heartbeat[6],
+        "battery": heartbeat[5],
+        "temp": temp[0]
+      }
 
   conn.close()
 
@@ -78,7 +97,7 @@ def data(team, nodeid):
   return response
 
 @app.route('/time')
-def time():
+def localtime():
   return time.localtime()
 
 @app.route('/errorlog')

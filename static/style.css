@@ -1,18 +1,51 @@
+.nodes{
+  display: flex;
+  flex-wrap: wrap;
+}
 
 .teambox {
-  display: flex;
+  background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  margin: 3px;
+}
+
+.teambox h2 {
+  text-align: center;
+}
+
+.teambox a {
+  text-decoration: none;
 }
 
 .nodebox {
   border: 1px solid gray;
+  background-color: #e0e0e0;
   padding: 10px;
   margin: 10px;
-  text-align: center;
   font-family: sans;
+}
+
+.nodebox-ok{
+  background-color: #e0f0e0;
+}
+.nodebox-warning{
+  background-color: #ffffd0;
+}
+.nodebox-error{
+  background-color: #ffe0e0;
 }
 
 .nodeid {
   font-weight: bold;
   font-size: x-large;
+  color: #303030;
+}
+
+.lastreport {
+  color: #507050;
+}
+
+.lastreport-old {
+  color: #a00000;
 }
 
