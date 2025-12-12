@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, redirect, url_for, flash, make_response
 import time
 import sqlite3
+import json
 
 dbFile = 'data.db'
 
@@ -73,11 +74,17 @@ def status(team, nodeid):
 
   # TODO: error handling if team/node isn't valid
 
-  # Note: this use of a "bare column" select is a sqlite-specific feature
-  #result = c.execute("SELECT max(timestamp),subtopic,message FROM messages WHERE student = ?  GROUP BY subtopic", (student,))
-  #lastreport = [{"timestamp":time2str(r[0]), "subtopic":r[1], "message":r[2]} for r in result]
+  result = c.execute("SELECT timestamp, fulltext FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (team, nodeid))
+  heartbeat = result.fetchone()
 
-  return render_template('node.html', lastreport = {}, team = team, nodeid = nodeid)
+  try:
+    lastreport = json.loads(heartbeat[1])
+    timestamp = time2str(heartbeat[0])
+  except Exception as e:
+    lastreport = {}
+    timestamp = ""
+
+  return render_template('node.html', lastreport = lastreport, timestamp = timestamp, team = team, nodeid = nodeid)
 
 
 @app.route('/data/<team>/<nodeid>')

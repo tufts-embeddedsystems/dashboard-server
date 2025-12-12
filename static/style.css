@@ -49,3 +49,21 @@
   color: #a00000;
 }
 
+.keytable {
+    border-style: none;
+    padding:10px;
+}
+
+.keytable tr:nth-child(even) { background-color: #e0e0e0; }
+.keytable tr.r1 { font-weight: bold; border-bottom: 2px solid black; }
+
+.keytable td{
+    padding: 5px;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    text-align: left;
+    border-color: #dddddd;
+}
+
+
+

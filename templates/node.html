@@ -97,6 +97,20 @@ plotcontainer.append(svg.node());
 <h2>Last 72 hours of temperature readings:</h2>
 <div id="plotcontainer"></div>
 
+<h2>Most recent heartbeat:</h2>
+{{ timestamp }}
+
+<table class="keytable">
+<tr><th>Key</th><th>Value</th></tr>
+{% for key,val in lastreport.items() %}
+<tr>
+<td>{{key}}</td>
+<td>{{val}}</td>
+</tr>
+
+{% endfor %}
+
+
 
 </body>
 </html>
