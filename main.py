@@ -40,7 +40,7 @@ def index():
 
     # Get the most recent heartbeat from each node
     for n in nodeids:
-      result = c.execute("SELECT * FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
+      result = c.execute("SELECT * FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY rxtime DESC LIMIT 1", (t, n))
       heartbeat = result.fetchone()
 
       result = c.execute("SELECT sensortemp FROM measurements WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (t, n))
