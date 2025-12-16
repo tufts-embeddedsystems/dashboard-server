@@ -74,7 +74,7 @@ def status(team, nodeid):
 
   # TODO: error handling if team/node isn't valid
 
-  result = c.execute("SELECT timestamp, fulltext FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY timestamp DESC LIMIT 1", (team, nodeid))
+  result = c.execute("SELECT rxtime, fulltext FROM heartbeats WHERE team IS ? AND nodeid IS ? ORDER BY rxtime DESC LIMIT 1", (team, nodeid))
   heartbeat = result.fetchone()
 
   try:
